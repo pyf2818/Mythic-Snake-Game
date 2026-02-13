@@ -2,9 +2,22 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#030014">
+    <meta name="msapplication-TileColor" content="#030014">
+    <meta name="description" content="Mythic Snake - 一款神话风格的贪吃蛇游戏">
     <title>Mythic Snake</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 关键CSS内联以确保首屏渲染 */
+        body { margin: 0; padding: 0; background: #030014; }
+        #game-container { width: 100vw; height: 100vh; overflow: hidden; }
+    </style>
 </head>
 <body>
     <div id="game-container">
@@ -57,33 +70,13 @@
             </div>
         </div>
         
-        <!-- 游戏画布 -->
-        <div id="game-canvas"></div>
-        
-        <!-- 波次信息显示 -->
-        <div id="wave-info" class="wave-info hidden">
-            <div class="wave-icon">🌊</div>
-            <div class="wave-content">
-                <div class="wave-label">当前波次</div>
-                <div class="wave-number" id="wave-number">0</div>
-            </div>
-            <div class="wave-timer" id="wave-timer">下一波: 25s</div>
-        </div>
-        
-        <!-- BOSS信息显示 -->
-        <div id="boss-info" class="boss-info hidden">
-            <div class="boss-name" id="boss-name">九头蛇</div>
-            <div class="boss-health-container">
-                <div class="boss-health-bar" id="boss-health-bar">
-                    <div class="boss-health-fill" id="boss-health-fill"></div>
-                </div>
-                <div class="boss-health-text" id="boss-health-text">100%</div>
-            </div>
-            <div class="boss-phase" id="boss-phase">阶段 1</div>
-        </div>
-        
-        <!-- 游戏UI -->
-        <div id="game-ui" class="hidden">
+        <!-- 游戏区域包装器 -->
+        <div class="game-area-wrapper">
+            <!-- 游戏画布 -->
+            <div id="game-canvas"></div>
+            
+            <!-- 游戏UI -->
+            <div id="game-ui" class="hidden">
             <!-- 左上角 - 玩家属性面板 -->
             <div id="player-stats-panel" class="ui-panel left-panel">
                 <div class="panel-header">
@@ -259,6 +252,42 @@
                             <span id="debug-current-speed">5</span>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- 波次信息显示 -->
+            <div id="wave-info" class="wave-info hidden">
+                <div class="wave-icon">🌊</div>
+                <div class="wave-content">
+                    <div class="wave-label">当前波次</div>
+                    <div class="wave-number" id="wave-number">0</div>
+                </div>
+                <div class="wave-timer" id="wave-timer">下一波: 25s</div>
+            </div>
+            
+            <!-- BOSS信息显示 -->
+            <div id="boss-info" class="boss-info hidden">
+                <div class="boss-name" id="boss-name">九头蛇</div>
+                <div class="boss-health-container">
+                    <div class="boss-health-bar" id="boss-health-bar">
+                        <div class="boss-health-fill" id="boss-health-fill"></div>
+                    </div>
+                    <div class="boss-health-text" id="boss-health-text">100%</div>
+                </div>
+                <div class="boss-phase" id="boss-phase">阶段 1</div>
+            </div>
+            
+            <!-- 移动端虚拟控制器 -->
+            <div class="mobile-controls" id="mobile-controls">
+                <div class="mobile-dpad">
+                    <button class="mobile-dpad-btn up" data-direction="up" aria-label="向上移动">▲</button>
+                    <button class="mobile-dpad-btn down" data-direction="down" aria-label="向下移动">▼</button>
+                    <button class="mobile-dpad-btn left" data-direction="left" aria-label="向左移动">◀</button>
+                    <button class="mobile-dpad-btn right" data-direction="right" aria-label="向右移动">▶</button>
+                </div>
+                <div class="mobile-action-btns">
+                    <button class="mobile-action-btn flash" id="mobile-flash" aria-label="闪现技能">⚡</button>
+                    <button class="mobile-action-btn boost" id="mobile-boost" aria-label="加速">🚀</button>
                 </div>
             </div>
         </div>
@@ -804,6 +833,7 @@
     <script src="js/systems/ScoreCoinUI.js"></script>
     <script src="js/ai/AIController.js"></script>
     <script src="js/visuals/Renderer.js"></script>
+    <script src="js/utils/MobileControls.js"></script>
     <script src="js/entities/EnemySprites.js"></script>
     <script src="js/entities/Boss.js"></script>
     <script src="js/systems/test.js"></script>

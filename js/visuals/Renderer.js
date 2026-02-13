@@ -2,9 +2,18 @@ class Renderer {
     constructor(gameManager) {
         this.gameManager = gameManager;
         this.canvas = document.createElement('canvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = 1000;
-        this.canvas.height = 800;
+        this.ctx = this.canvas.getContext('2d', { 
+            alpha: false,
+            desynchronized: true
+        });
+        
+        // 跨浏览器Canvas优化
+        this.setupCanvasCompatibility();
+        
+        // 响应式画布尺寸
+        this.baseWidth = 1000;
+        this.baseHeight = 800;
+        this.resizeCanvas();
         
         console.log('Creating canvas:', this.canvas.width, 'x', this.canvas.height);
         
@@ -19,6 +28,9 @@ class Renderer {
             console.log('Canvas added to body');
         }
         console.log('Canvas created and added to DOM');
+        
+        // 监听窗口大小变化
+        this.setupResizeListener();
 
         
         // 相机系统
@@ -48,6 +60,165 @@ class Renderer {
             duration: 0,
             timer: 0
         };
+        
+        // 设备像素比适配
+        this.dpr = this.getDevicePixelRatio();
+        this.applyDPR();
+    }
+    
+    setupCanvasCompatibility() {
+        // 检测浏览器特性支持
+        this.compatibility = {
+            imageSmoothing: this.checkImageSmoothingSupport(),
+            blendModes: this.checkBlendModeSupport(),
+            filters: this.checkFilterSupport(),
+            willReadFrequently: true
+        };
+        
+        // 设置默认图像平滑
+        this.setImageSmoothing(true);
+    }
+    
+    getDevicePixelRatio() {
+        return Math.min(window.devicePixelRatio || 1, 2);
+    }
+    
+    applyDPR() {
+        const dpr = this.dpr;
+        this.canvas.style.width = this.canvas.width + 'px';
+        this.canvas.style.height = this.canvas.height + 'px';
+    }
+    
+    checkImageSmoothingSupport() {
+        const ctx = this.ctx;
+        return !!(ctx.imageSmoothingEnabled || 
+                  ctx.mozImageSmoothingEnabled || 
+                  ctx.webkitImageSmoothingEnabled || 
+                  ctx.msImageSmoothingEnabled);
+    }
+    
+    setImageSmoothing(enabled) {
+        const ctx = this.ctx;
+        if (ctx.imageSmoothingEnabled !== undefined) {
+            ctx.imageSmoothingEnabled = enabled;
+        }
+        if (ctx.mozImageSmoothingEnabled !== undefined) {
+            ctx.mozImageSmoothingEnabled = enabled;
+        }
+        if (ctx.webkitImageSmoothingEnabled !== undefined) {
+            ctx.webkitImageSmoothingEnabled = enabled;
+        }
+        if (ctx.msImageSmoothingEnabled !== undefined) {
+            ctx.msImageSmoothingEnabled = enabled;
+        }
+        // 设置平滑质量
+        if (ctx.imageSmoothingQuality !== undefined) {
+            ctx.imageSmoothingQuality = 'high';
+        }
+    }
+    
+    checkBlendModeSupport() {
+        try {
+            this.ctx.globalCompositeOperation = 'screen';
+            const supported = this.ctx.globalCompositeOperation === 'screen';
+            this.ctx.globalCompositeOperation = 'source-over';
+            return supported;
+        } catch (e) {
+            return false;
+        }
+    }
+    
+    checkFilterSupport() {
+        try {
+            this.ctx.filter = 'blur(1px)';
+            const supported = this.ctx.filter === 'blur(1px)';
+            this.ctx.filter = 'none';
+            return supported;
+        } catch (e) {
+            return false;
+        }
+    }
+    
+    resizeCanvas() {
+        const container = document.getElementById('game-canvas');
+        let width, height;
+        
+        if (container) {
+            // 获取容器的计算样式
+            const containerStyle = window.getComputedStyle(container);
+            const containerWidth = parseInt(containerStyle.width) || this.baseWidth;
+            const containerHeight = parseInt(containerStyle.height) || this.baseHeight;
+            
+            width = Math.min(containerWidth, this.baseWidth);
+            height = Math.min(containerHeight, this.baseHeight);
+        } else {
+            width = Math.min(window.innerWidth, this.baseWidth);
+            height = Math.min(window.innerHeight * 0.6, this.baseHeight);
+        }
+        
+        // 保持宽高比
+        const aspectRatio = this.baseWidth / this.baseHeight;
+        if (width / height > aspectRatio) {
+            width = height * aspectRatio;
+        } else {
+            height = width / aspectRatio;
+        }
+        
+        // 确保尺寸有效
+        width = Math.max(width, 320);
+        height = Math.max(height, 240);
+        
+        // 应用设备像素比
+        const dpr = this.dpr || 1;
+        this.canvas.width = Math.floor(width * dpr);
+        this.canvas.height = Math.floor(height * dpr);
+        
+        // 存储逻辑尺寸
+        this.logicalWidth = width;
+        this.logicalHeight = height;
+        
+        // 设置CSS尺寸
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
+        
+        // 确保Canvas居中显示
+        this.canvas.style.display = 'block';
+        this.canvas.style.position = 'absolute';
+        this.canvas.style.top = '50%';
+        this.canvas.style.left = '50%';
+        this.canvas.style.transform = 'translate(-50%, -50%)';
+        this.canvas.style.margin = '0';
+        this.canvas.style.padding = '0';
+        
+        // 重新应用图像平滑设置
+        this.setImageSmoothing(true);
+        
+        // 缩放上下文以匹配设备像素比
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    
+    setupResizeListener() {
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.resizeCanvas();
+            }, 100);
+        });
+        
+        // 监听设备方向变化
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                this.resizeCanvas();
+            }, 200);
+        });
+        
+        // 监听全屏变化
+        document.addEventListener('fullscreenchange', () => {
+            setTimeout(() => {
+                this.resizeCanvas();
+            }, 100);
+        });
     }
     
     addScreenShake(intensity, duration) {

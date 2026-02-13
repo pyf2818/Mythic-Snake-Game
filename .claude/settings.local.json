@@ -3,7 +3,16 @@
     "allow": [
       "Bash(git init)",
       "Bash(git add .)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: initial commit - Mythic Snake roguelike game\n\nComplete implementation of HTML5 Canvas snake game with:\n- Wave-based enemy spawning system\n- Boss battles \\(5 types: Hydra, Demon, Titan, Thor, Chaos Lord\\)\n- Equipment system \\(weapons, accessories, collectibles\\)\n- Organ evolution mechanic\n- Weather/disaster systems with particle effects\n- Day/night cycles and seasons\n- localStorage save system \\(3 slots\\)\n- Full UI with inventory, leaderboard, achievements\n\nTechnical details:\n- Vanilla JavaScript ES6+ with class-based architecture\n- System-based game architecture pattern\n- RequestAnimationFrame game loop\n- Canvas rendering with particle effects\n- No external dependencies\n\nDocs: README.md, CLAUDE.md for development guide\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: initial commit - Mythic Snake roguelike game\n\nComplete implementation of HTML5 Canvas snake game with:\n- Wave-based enemy spawning system\n- Boss battles \\(5 types: Hydra, Demon, Titan, Thor, Chaos Lord\\)\n- Equipment system \\(weapons, accessories, collectibles\\)\n- Organ evolution mechanic\n- Weather/disaster systems with particle effects\n- Day/night cycles and seasons\n- localStorage save system \\(3 slots\\)\n- Full UI with inventory, leaderboard, achievements\n\nTechnical details:\n- Vanilla JavaScript ES6+ with class-based architecture\n- System-based game architecture pattern\n- RequestAnimationFrame game loop\n- Canvas rendering with particle effects\n- No external dependencies\n\nDocs: README.md, CLAUDE.md for development guide\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: update game with latest changes and new features\n\n- Updated core game systems and boss mechanics\n- Added intro story system \\(IntroStory.js\\)\n- Enhanced wormhole visuals and bullet system\n- Updated drop item mechanics\n- Added lore documentation \\(LORE.md\\)\n- Improved overall game stability\n\nReady for GitHub Pages deployment\nEOF\n\\)\")",
+      "Bash(git remote add origin https://github.com/pyf2818/Mythic-Snake-Game.git)",
+      "Bash(git push -u origin master)",
+      "Bash(git add LICENSE README.md js/core/GameManager.js js/entities/Boss.js js/game.js js/systems/BossManager.js js/systems/BulletSystem.js js/systems/CardSystem.js js/systems/DropItemSystem.js js/systems/InventorySystem.js js/systems/OrganEvolution.js)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add proprietary license and copyright notices\n\nLegal protection:\n- Added LICENSE file with All Rights Reserved terms\n- Added copyright headers to core files \\(GameManager, Boss, game.js\\)\n- Updated systems \\(BossManager, BulletSystem, CardSystem, etc.\\)\n- Updated README.md with license section and warnings\n- Explicitly prohibits commercial use\n- Includes commercial licensing contact info\n\nNow ready for public deployment with legal protection\nEOF\n\\)\")",
+      "Bash(git push origin master)",
+      "Bash(git add LICENSE README.md)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: update contact email in license files\n\nUpdated email to 2818932783@qq.com in:\n- LICENSE \\(commercial licensing contact\\)\n- README.md \\(license section\\)\n\nReady for deployment\nEOF\n\\)\")",
+      "Bash(git remote get-url origin)"
     ]
   }
 }

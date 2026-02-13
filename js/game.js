@@ -1318,6 +1318,12 @@ window.addEventListener('DOMContentLoaded', function() {
             window.gameManager = new GameManager();
             console.log('Game manager created:', window.gameManager);
             
+            // 初始化移动端控制器
+            if (window.MobileControls) {
+                window.mobileControls = new MobileControls(window.gameManager);
+                console.log('Mobile controls initialized:', window.mobileControls.enabled);
+            }
+            
             // 初始化UI事件
             initUIEvents();
             console.log('UI events initialized');
