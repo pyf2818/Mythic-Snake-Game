@@ -1,6 +1,9 @@
 /**
  * 卡牌系统 - 肉鸽元素卡牌抽取系统
  * 每3波敌人进攻后触发卡牌抽取，玩家可选择一张卡牌获得永久增益
+ *
+ * Mythic Snake - Copyright (C) 2024 Mythic Snake Team
+ * All rights reserved. Unauthorized commercial use strictly prohibited.
  */
 
 // 卡牌稀有度定义

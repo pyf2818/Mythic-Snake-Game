@@ -1,3 +1,12 @@
+/**
+ * Mythic Snake - Game Entities
+ * Copyright (C) 2024 Mythic Snake Team
+ * All rights reserved.
+ *
+ * This software is proprietary. Unauthorized commercial use is strictly prohibited.
+ * See LICENSE file for full terms.
+ */
+
 // 游戏对象类
 class Food {
     constructor(gameManager, x, y, foodType = 'normal') {

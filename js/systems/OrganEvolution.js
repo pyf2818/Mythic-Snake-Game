@@ -1,3 +1,12 @@
+/**
+ * Mythic Snake - Organ Evolution System
+ * Copyright (C) 2024 Mythic Snake Team
+ * All rights reserved.
+ *
+ * This software is proprietary. Unauthorized commercial use is strictly prohibited.
+ * See LICENSE file for full terms.
+ */
+
 class OrganEvolution {
     constructor(gameManager) {
         this.gameManager = gameManager;

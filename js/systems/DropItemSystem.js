@@ -1,6 +1,9 @@
 /**
  * 掉落物品系统 - 完整设计方案
  * 包含：物品分类、稀有度、属性生成、Buff系统、武器效果
+ *
+ * Mythic Snake - Copyright (C) 2024 Mythic Snake Team
+ * All rights reserved. Unauthorized commercial use strictly prohibited.
  */
 
 // ==================== 物品类型定义 ====================

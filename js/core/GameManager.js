@@ -1,3 +1,12 @@
+/**
+ * Mythic Snake - A Roguelike Snake Game
+ * Copyright (C) 2024 Mythic Snake Team
+ * All rights reserved.
+ *
+ * This software is proprietary. Unauthorized commercial use is strictly prohibited.
+ * See LICENSE file for full terms.
+ */
+
 class GameManager {
     constructor() {
         this.gameState = 'menu';

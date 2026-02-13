@@ -1,5 +1,8 @@
 /**
  * 玩家子弹类 - 玩家蛇发射的子弹
+ *
+ * Mythic Snake - Copyright (C) 2024 Mythic Snake Team
+ * All rights reserved. Unauthorized commercial use strictly prohibited.
  */
 class PlayerBullet {
     constructor(gameManager, x, y, dx, dy, config = {}) {

@@ -1,6 +1,9 @@
 /**
  * 仓库系统 - 管理玩家获得的各类首领掉落物
  * 依赖：DropItemSystem.js
+ *
+ * Mythic Snake - Copyright (C) 2024 Mythic Snake Team
+ * All rights reserved. Unauthorized commercial use strictly prohibited.
  */
 
 class InventorySystem {
