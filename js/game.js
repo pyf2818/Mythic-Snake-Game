@@ -1620,6 +1620,237 @@ function showQuickSaveHint(message, type = 'info') {
 function startGame() {
     // 隐藏主菜单
     document.getElementById('main-menu').classList.add('hidden');
+    
+    // 获取游戏实例
+    const gameManager = window.gameManager;
+    
+    // 强制显示开场故事 - 任何情况下都必须显示
+    try {
+        if (window.IntroStory) {
+            // 创建并显示开场故事
+            const introStory = new IntroStory(gameManager);
+            gameManager.introStory = introStory;
+            
+            // 启动游戏循环（用于更新开场故事的跳过功能）
+            gameManager.startGameLoop();
+            
+            // 显示开场故事
+            introStory.show();
+        } else {
+            // IntroStory 类未加载，动态创建简单的开场故事显示
+            console.warn('IntroStory class not found, creating fallback story display');
+            createFallbackIntroStory(gameManager);
+        }
+    } catch (error) {
+        console.error('Error showing intro story:', error);
+        // 即使出错也尝试显示备用开场故事
+        createFallbackIntroStory(gameManager);
+    }
+}
+
+function createFallbackIntroStory(gameManager) {
+    // 创建一个简单的开场故事容器
+    const container = document.createElement('div');
+    container.id = 'fallback-intro-story';
+    container.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 20000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+        opacity: 0;
+        transition: opacity 1s ease;
+    `;
+    
+    // 故事内容
+    const storyTexts = [
+        { title: "混沌初开", content: "在时间尚未被命名的纪元，虚空之中唯有混沌。混沌无形无相，却蕴含万物之种。它在永恒的黑暗中沉睡，呼吸间便是万古的轮回。" },
+        { title: "神祇诞生", content: "混沌的意识分裂为二，化作五大原初神祇：泰坦、炎魔、九首海德拉、雷神与混沌·努恩。他们联手开辟天地，将混沌本源封印于世界极渊。" },
+        { title: "始祖之蛇", content: "创世完成之际，始祖之蛇诞生于余烬之中。它拥有吞噬一切、转化一切的神奇力量，游走于天地之间，净化世界，被称为「世界之环」。" },
+        { title: "诸神黄昏", content: "万年之后，混沌的低语唤醒了炎魔。诸神之战持续三百载，世界破碎，神祇陨落。始祖之蛇吞噬过多混沌之力，陷入永恒沉睡。" },
+        { title: "命运之始", content: "如今，封印松动，神话遗物散落各地。你，作为蛇之眷属的一员，从混沌中苏醒。吞噬吧，进化吧，成为新世界之环——或者让混沌吞噬一切。" }
+    ];
+    
+    let currentIndex = 0;
+    
+    // 标题元素
+    const titleEl = document.createElement('div');
+    titleEl.style.cssText = `
+        font-size: 2.5em;
+        color: #ffd700;
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        margin-bottom: 40px;
+        text-align: center;
+        font-weight: 300;
+        letter-spacing: 8px;
+    `;
+    
+    // 内容容器
+    const contentWrapper = document.createElement('div');
+    contentWrapper.style.cssText = `
+        width: 90%;
+        max-width: 800px;
+        padding: 30px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+    `;
+    
+    // 内容元素
+    const textEl = document.createElement('div');
+    textEl.style.cssText = `
+        font-size: 1.2em;
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 2;
+        text-align: justify;
+        font-family: 'Georgia', 'Noto Serif SC', serif;
+        letter-spacing: 1px;
+    `;
+    
+    // 进度指示器
+    const progressContainer = document.createElement('div');
+    progressContainer.style.cssText = `
+        margin-top: 40px;
+        display: flex;
+        gap: 12px;
+    `;
+    
+    storyTexts.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.style.cssText = `
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: ${index === 0 ? '#ffd700' : 'rgba(255, 255, 255, 0.2)'};
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            transition: all 0.3s ease;
+        `;
+        progressContainer.appendChild(dot);
+    });
+    
+    // 跳过提示
+    const skipHint = document.createElement('div');
+    skipHint.style.cssText = `
+        position: fixed;
+        bottom: 40px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.9em;
+    `;
+    skipHint.textContent = '点击任意位置继续 | 长按跳过';
+    
+    contentWrapper.appendChild(textEl);
+    container.appendChild(titleEl);
+    container.appendChild(contentWrapper);
+    container.appendChild(progressContainer);
+    container.appendChild(skipHint);
+    document.body.appendChild(container);
+    
+    // 显示容器
+    setTimeout(() => {
+        container.style.opacity = '1';
+    }, 100);
+    
+    // 显示当前故事（带打字机效果）
+    async function showStory(index) {
+        if (index >= storyTexts.length) {
+            // 故事结束，开始游戏
+            container.style.opacity = '0';
+            setTimeout(() => {
+                container.remove();
+                proceedToGame();
+            }, 1000);
+            return;
+        }
+        
+        currentIndex = index;
+        const story = storyTexts[index];
+        titleEl.textContent = story.title;
+        
+        // 打字机效果显示内容
+        textEl.textContent = '';
+        const chars = story.content.split('');
+        
+        for (let i = 0; i < chars.length; i++) {
+            if (!container.parentNode) break; // 容器已被移除
+            
+            textEl.textContent += chars[i];
+            await new Promise(resolve => setTimeout(resolve, 30)); // 30ms 每字符
+        }
+        
+        // 更新进度指示器
+        const dots = progressContainer.children;
+        for (let i = 0; i < dots.length; i++) {
+            dots[i].style.background = i === index ? '#ffd700' : 
+                                       i < index ? 'rgba(255, 215, 0, 0.5)' : 
+                                       'rgba(255, 255, 255, 0.2)';
+        }
+    }
+    
+    // 初始显示第一个故事
+    showStory(0);
+    
+    // 点击继续
+    let skipHoldTime = 0;
+    let isHolding = false;
+    let isShowingStory = false;
+    
+    async function handleContinue() {
+        if (isShowingStory) return; // 正在显示故事时忽略点击
+        isShowingStory = true;
+        await showStory(currentIndex + 1);
+        isShowingStory = false;
+    }
+    
+    container.addEventListener('click', handleContinue);
+    
+    container.addEventListener('mousedown', () => {
+        isHolding = true;
+        skipHoldTime = 0;
+    });
+    
+    container.addEventListener('mouseup', () => {
+        isHolding = false;
+        skipHoldTime = 0;
+    });
+    
+    container.addEventListener('touchstart', (e) => {
+        isHolding = true;
+        skipHoldTime = 0;
+    });
+    
+    container.addEventListener('touchend', () => {
+        isHolding = false;
+        skipHoldTime = 0;
+    });
+    
+    // 更新循环
+    const updateInterval = setInterval(() => {
+        if (isHolding) {
+            skipHoldTime += 0.05;
+            if (skipHoldTime >= 0.5) {
+                // 长按跳过
+                clearInterval(updateInterval);
+                container.style.opacity = '0';
+                setTimeout(() => {
+                    container.remove();
+                    proceedToGame();
+                }, 1000);
+            }
+        }
+    }, 50);
+    
+    // 启动游戏循环
+    gameManager.startGameLoop();
+}
+
+function proceedToGame() {
     // 显示游戏UI
     document.getElementById('game-ui').classList.remove('hidden');
     
@@ -1636,7 +1867,6 @@ function startGame() {
     
     // 获取游戏实例
     const gameManager = window.gameManager;
-    console.log('Starting game with gameManager:', gameManager);
     
     // 启动游戏
     gameManager.startGame();
@@ -1649,6 +1879,21 @@ function showMainMenu() {
     if (window.gameManager) {
         window.gameManager.stopGameLoop();
         window.gameManager.gameState = 'menu';
+        
+        // 清除Canvas画布
+        if (window.gameManager.canvas) {
+            const ctx = window.gameManager.canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = '#0a0a1a';
+                ctx.fillRect(0, 0, window.gameManager.canvas.width, window.gameManager.canvas.height);
+            }
+        }
+        
+        // 清理开场故事实例
+        if (window.gameManager.introStory) {
+            window.gameManager.introStory.hide();
+            window.gameManager.introStory = null;
+        }
     }
     
     // 隐藏所有菜单
@@ -2448,10 +2693,12 @@ function updateCoinsDisplay() {
 
 // 导出游戏对象
 try {
-    module.exports = { startGame, Food, Enemy, GameDataManager };
+    module.exports = { startGame, proceedToGame, createFallbackIntroStory, Food, Enemy, GameDataManager };
 } catch (e) {
     // 浏览器环境
     window.startGame = startGame;
+    window.proceedToGame = proceedToGame;
+    window.createFallbackIntroStory = createFallbackIntroStory;
     window.Food = Food;
     window.Enemy = Enemy;
     window.GameDataManager = GameDataManager;

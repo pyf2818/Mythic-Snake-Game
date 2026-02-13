@@ -117,6 +117,18 @@ class WormholeVisualRenderer {
         this.particles = [];
     }
     
+    hexToRgba(hex, alpha) {
+        alpha = Math.max(0, Math.min(1, alpha));
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (result) {
+            const r = parseInt(result[1], 16);
+            const g = parseInt(result[2], 16);
+            const b = parseInt(result[3], 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2)})`;
+        }
+        return `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
+    }
+    
     updateTime(deltaTime) {
         this.time += deltaTime;
     }
@@ -172,8 +184,8 @@ class WormholeVisualRenderer {
             
             const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, layerRadius + pulseOffset);
             gradient.addColorStop(0, wormhole.wormholeType.color + '00');
-            gradient.addColorStop(0.3, wormhole.wormholeType.color + Math.floor(layerAlpha * 255).toString(16).padStart(2, '0'));
-            gradient.addColorStop(0.6, wormhole.wormholeType.secondaryColor + Math.floor(layerAlpha * 0.5 * 255).toString(16).padStart(2, '0'));
+            gradient.addColorStop(0.3, this.hexToRgba(wormhole.wormholeType.color, layerAlpha));
+            gradient.addColorStop(0.6, this.hexToRgba(wormhole.wormholeType.secondaryColor, layerAlpha * 0.5));
             gradient.addColorStop(1, wormhole.wormholeType.color + '00');
             
             ctx.fillStyle = gradient;
@@ -193,7 +205,7 @@ class WormholeVisualRenderer {
             const waveRadius = baseRadius * (0.5 + waveProgress * 1.5);
             const waveAlpha = (1 - waveProgress) * 0.3;
             
-            ctx.strokeStyle = wormhole.wormholeType.color + Math.floor(waveAlpha * 255).toString(16).padStart(2, '0');
+            ctx.strokeStyle = this.hexToRgba(wormhole.wormholeType.color, waveAlpha);
             ctx.lineWidth = 2 - waveProgress;
             ctx.beginPath();
             ctx.arc(0, 0, waveRadius, 0, Math.PI * 2);
@@ -293,7 +305,7 @@ class WormholeVisualRenderer {
             ctx.rotate(ringRotation);
             
             // 虚线环
-            ctx.strokeStyle = wormhole.wormholeType.color + Math.floor(ringAlpha * 255).toString(16).padStart(2, '0');
+            ctx.strokeStyle = this.hexToRgba(wormhole.wormholeType.color, ringAlpha);
             ctx.lineWidth = 2 - ring * 0.5;
             ctx.setLineDash([8, 4]);
             ctx.beginPath();
@@ -328,7 +340,7 @@ class WormholeVisualRenderer {
             const pulseRadius = baseRadius + pulseProgress * baseRadius * 1.5;
             const pulseAlpha = (1 - pulseProgress) * 0.4;
             
-            ctx.strokeStyle = wormhole.wormholeType.color + Math.floor(pulseAlpha * 255).toString(16).padStart(2, '0');
+            ctx.strokeStyle = this.hexToRgba(wormhole.wormholeType.color, pulseAlpha);
             ctx.lineWidth = 3 * (1 - pulseProgress);
             ctx.beginPath();
             ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);

@@ -663,7 +663,7 @@ const BossDropPool = {
         {
             id: 'weapon_thunder_strike',
             name: '雷霆一击',
-            description: '召唤闪电链式攻击多个敌人',
+            description: '召唤闪电从天而降攻击多个敌人',
             icon: '⚡',
             type: DropType.WEAPON,
             rarity: DropRarity.RARE,

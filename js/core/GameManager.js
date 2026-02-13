@@ -357,7 +357,44 @@ class GameManager {
     }
     
     restartGame() {
-        this.startGame();
+        // 停止当前游戏循环
+        this.stopGameLoop();
+        
+        // 隐藏游戏结束界面
+        if (this.gameOverScreen) {
+            this.gameOverScreen.classList.add('hidden');
+        }
+        
+        // 隐藏暂停菜单
+        if (this.pauseMenu) {
+            this.pauseMenu.classList.add('hidden');
+        }
+        
+        // 隐藏游戏UI
+        const gameUI = document.getElementById('game-ui');
+        if (gameUI) {
+            gameUI.classList.add('hidden');
+        }
+        
+        // 侧边栏隐藏
+        const organSystem = document.getElementById('organ-system');
+        const eventLog = document.getElementById('event-log');
+        if (organSystem) organSystem.classList.remove('show');
+        if (eventLog) eventLog.classList.remove('show');
+        
+        // 清理开场故事实例
+        if (this.introStory) {
+            this.introStory.hide();
+            this.introStory = null;
+        }
+        
+        // 重置游戏状态
+        this.gameState = 'menu';
+        
+        // 调用全局startGame函数以显示开场故事
+        if (window.startGame) {
+            window.startGame();
+        }
     }
     
     startGameLoop() {
@@ -374,31 +411,21 @@ class GameManager {
             lastTime = currentTime;
             frameCount++;
             
-            // 仅在开发模式下输出日志
-            const isDevMode = false;
-            if (isDevMode) {
-                console.log('Game loop iteration:', frameCount, 'Game state:', this.gameState);
-                
-                if (frameCount % 60 === 0) {
-                    console.log('Game loop running. Frame count:', frameCount, 'Game objects:', this.gameObjects.length);
+            // 检查是否有开场故事在显示
+            if (this.introStory && this.introStory.isVisible) {
+                this.introStory.update(deltaTime);
+                this.gameLoopId = requestAnimationFrame(gameLoop);
+                return;
+            }
+            
+            if (this.gameState === 'playing') {
+                this.update(deltaTime);
+                this.render();
+            } else if (this.gameState === 'cardSelection') {
+                if (this.bossManager) {
+                    this.bossManager.update(deltaTime);
                 }
-                
-                if (this.gameState === 'playing') {
-                    console.log('Calling update()');
-                    this.update(deltaTime);
-                    console.log('Calling render()');
-                    this.render();
-                }
-            } else {
-                if (this.gameState === 'playing') {
-                    this.update(deltaTime);
-                    this.render();
-                } else if (this.gameState === 'cardSelection') {
-                    if (this.bossManager) {
-                        this.bossManager.update(deltaTime);
-                    }
-                    this.render();
-                }
+                this.render();
             }
             
             // 保存gameLoopId以便后续取消
@@ -425,14 +452,15 @@ class GameManager {
     }
     
     update(deltaTime) {
+        // 更新开场故事组件
+        if (this.introStory && this.introStory.isVisible) {
+            this.introStory.update(deltaTime);
+            return;
+        }
+        
         // 更新所有系统
         for (let system in this.systems) {
             if (this.systems[system].update) {
-                // 仅在开发模式下输出日志
-                const isDevMode = false;
-                if (isDevMode) {
-                    console.log('Calling update on system:', system);
-                }
                 this.systems[system].update(deltaTime);
             }
         }

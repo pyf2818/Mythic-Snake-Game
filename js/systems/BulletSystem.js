@@ -25,6 +25,18 @@ class PlayerBullet {
         this.rotationAngle = 0;
     }
     
+    hexToRgba(hex, alpha) {
+        alpha = Math.max(0, Math.min(1, alpha));
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (result) {
+            const r = parseInt(result[1], 16);
+            const g = parseInt(result[2], 16);
+            const b = parseInt(result[3], 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2)})`;
+        }
+        return `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
+    }
+    
     update(deltaTime) {
         this.lifetime -= deltaTime;
         if (this.lifetime <= 0) {
@@ -70,7 +82,7 @@ class PlayerBullet {
                 const size = this.width * (1 - progress * 0.7);
                 
                 // 绘制轨迹线段
-                renderCtx.strokeStyle = this.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                renderCtx.strokeStyle = this.hexToRgba(this.color, alpha);
                 renderCtx.lineWidth = size * 0.6;
                 renderCtx.lineCap = 'round';
                 renderCtx.beginPath();
@@ -565,6 +577,18 @@ class BulletSystem {
         this.specialWeaponTimer = 0;
     }
     
+    hexToRgba(hex, alpha) {
+        alpha = Math.max(0, Math.min(1, alpha));
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (result) {
+            const r = parseInt(result[1], 16);
+            const g = parseInt(result[2], 16);
+            const b = parseInt(result[3], 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2)})`;
+        }
+        return `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
+    }
+    
     initFireRateEnhancer() {
         if (window.FireRateEnhancer) {
             this.fireRateEnhancer = new FireRateEnhancer(this);
@@ -641,6 +665,8 @@ class BulletSystem {
         
         // 检查是否使用特殊武器
         if (this.specialWeapon && this.specialWeaponTimer >= this.specialWeaponCooldown) {
+            console.log(`=== Firing special weapon: ${this.specialWeapon.name} ===`);
+            console.log(`Timer: ${this.specialWeaponTimer}, Cooldown: ${this.specialWeaponCooldown}`);
             this.fireSpecialWeapon();
             this.specialWeaponTimer = 0;
             return;
@@ -873,80 +899,396 @@ class BulletSystem {
     }
     
     fireLightningWeapon(x, y, stats, weapon) {
-        // 找最近的敌人
-        let nearestEnemy = null;
-        let nearestDist = stats.range || 200;
+        console.log(`fireLightningWeapon called - 召唤闪电从天而降`);
+        
+        // 找范围内的所有敌人
+        let targets = [];
+        const range = stats.range || 200;
         
         this.gameManager.gameObjects.forEach(obj => {
             if (obj.type === 'enemy' || obj.type === 'boss' || obj.type === 'ai_snake') {
                 const dist = Math.sqrt((obj.x - x) ** 2 + (obj.y - y) ** 2);
-                if (dist < nearestDist) {
-                    nearestDist = dist;
-                    nearestEnemy = obj;
+                if (dist < range) {
+                    targets.push({ target: obj, dist: dist });
                 }
             }
         });
         
-        if (nearestEnemy) {
-            this.createLightningChain(x, y, nearestEnemy, stats.chainCount || 3, stats.damage, weapon.rarity.color);
+        // 按距离排序，优先攻击最近的敌人
+        targets.sort((a, b) => a.dist - b.dist);
+        
+        // 限制目标数量为链式攻击数量
+        const chainCount = stats.chainCount || 4;
+        targets = targets.slice(0, chainCount);
+        
+        console.log(`找到 ${targets.length} 个目标进行闪电攻击`);
+        
+        if (targets.length > 0) {
+            // 播放闪电音效
+            this.playLightningSound();
+            
+            // 对每个目标召唤闪电从天而降
+            targets.forEach((targetInfo, index) => {
+                const target = targetInfo.target;
+                
+                // 延迟每个闪电，形成连续效果
+                setTimeout(() => {
+                    // 从天空召唤闪电（Y=0 开始，到敌人位置）
+                    this.createLightningFromSky(target.x, target.y, stats.damage, weapon.rarity.color);
+                }, index * 100); // 每个闪电间隔100ms
+            });
+        } else {
+            // 没有敌人时也显示天空闪电特效
+            this.createSkyLightningEffect(x);
+            console.log('No enemy in range for lightning weapon');
         }
     }
     
-    createLightningChain(x, y, target, chainCount, damage, color) {
-        let currentTarget = target;
-        let currentX = x;
-        let currentY = y;
-        let hitTargets = [];
+    playLightningSound() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioContext.currentTime;
+            
+            // 主音
+            const osc1 = audioContext.createOscillator();
+            const gain1 = audioContext.createGain();
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(150, now);
+            osc1.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+            gain1.gain.setValueAtTime(0.3, now);
+            gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc1.connect(gain1);
+            gain1.connect(audioContext.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.3);
+            
+            // 高频嘶嘶声
+            const osc2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            osc2.type = 'square';
+            osc2.frequency.setValueAtTime(2000, now);
+            osc2.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+            gain2.gain.setValueAtTime(0.1, now);
+            gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc2.connect(gain2);
+            gain2.connect(audioContext.destination);
+            osc2.start(now);
+            osc2.stop(now + 0.2);
+            
+            // 雷声低频
+            const osc3 = audioContext.createOscillator();
+            const gain3 = audioContext.createGain();
+            osc3.type = 'sine';
+            osc3.frequency.setValueAtTime(80, now);
+            osc3.frequency.exponentialRampToValueAtTime(30, now + 0.5);
+            gain3.gain.setValueAtTime(0.4, now);
+            gain3.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            osc3.connect(gain3);
+            gain3.connect(audioContext.destination);
+            osc3.start(now);
+            osc3.stop(now + 0.5);
+            
+            setTimeout(() => audioContext.close(), 600);
+        } catch (e) {
+            // 音频不可用时静默失败
+        }
+    }
+    
+    createLightningFromSky(targetX, targetY, damage, color) {
+        if (!this.gameManager.systems.renderer) return;
         
-        for (let i = 0; i < chainCount && currentTarget; i++) {
-            // 对目标造成伤害
-            if (currentTarget.takeDamage) {
-                currentTarget.takeDamage(damage);
-            }
-            
-            // 创建闪电效果
-            this.createLightningEffect(currentX, currentY, currentTarget.x, currentTarget.y, color);
-            
-            hitTargets.push(currentTarget);
-            currentX = currentTarget.x;
-            currentY = currentTarget.y;
-            
-            // 找下一个目标
-            currentTarget = null;
-            let minDist = 150;
-            
-            this.gameManager.gameObjects.forEach(obj => {
-                if ((obj.type === 'enemy' || obj.type === 'boss' || obj.type === 'ai_snake') && 
-                    !hitTargets.includes(obj)) {
-                    const dist = Math.sqrt((obj.x - currentX) ** 2 + (obj.y - currentY) ** 2);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        currentTarget = obj;
-                    }
-                }
+        const renderer = this.gameManager.systems.renderer;
+        
+        // 金黄色调配色方案
+        const goldCore = '#ffffff';
+        const goldInner = '#ffd700';
+        const goldMiddle = '#ffb300';
+        const goldOuter = '#ff8c00';
+        const goldGlow = '#ff6600';
+        
+        // 从天空（Y=0）到目标位置的闪电
+        const skyY = -50;
+        const steps = 25;
+        
+        // 第一阶段：天空聚集能量效果
+        for (let i = 0; i < 15; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 30 + Math.random() * 50;
+            renderer.addParticle({
+                x: targetX + Math.cos(angle) * dist,
+                y: skyY + Math.sin(angle) * dist * 0.3,
+                size: 8 + Math.random() * 6,
+                color: goldInner,
+                velocity: {
+                    x: -Math.cos(angle) * 3,
+                    y: 5 + Math.random() * 3
+                },
+                lifetime: 0.4,
+                opacity: 0.9
             });
         }
-    }
-    
-    createLightningEffect(x1, y1, x2, y2, color) {
-        // 创建闪电粒子效果
-        const steps = 10;
+        
+        // 第二阶段：主闪电束（从天而降）- 多层渲染
         for (let i = 0; i < steps; i++) {
             const t = i / steps;
-            const px = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 20;
-            const py = y1 + (y2 - y1) * t + (Math.random() - 0.5) * 20;
+            const baseX = targetX + (Math.random() - 0.5) * 30;
+            const baseY = skyY + (targetY - skyY) * t;
             
-            if (this.gameManager.systems.renderer) {
-                this.gameManager.systems.renderer.addParticle({
+            // 外层光晕（最大）
+            renderer.addParticle({
+                x: baseX + (Math.random() - 0.5) * 60,
+                y: baseY + (Math.random() - 0.5) * 20,
+                size: 45 + Math.random() * 20,
+                color: goldGlow,
+                velocity: { x: 0, y: 0 },
+                lifetime: 0.35,
+                opacity: 0.4
+            });
+            
+            // 中层光晕
+            renderer.addParticle({
+                x: baseX + (Math.random() - 0.5) * 35,
+                y: baseY + (Math.random() - 0.5) * 15,
+                size: 30 + Math.random() * 15,
+                color: goldOuter,
+                velocity: { x: 0, y: 0 },
+                lifetime: 0.3,
+                opacity: 0.6
+            });
+            
+            // 内层光晕
+            renderer.addParticle({
+                x: baseX + (Math.random() - 0.5) * 20,
+                y: baseY + (Math.random() - 0.5) * 10,
+                size: 20 + Math.random() * 10,
+                color: goldMiddle,
+                velocity: { x: 0, y: 0 },
+                lifetime: 0.25,
+                opacity: 0.8
+            });
+            
+            // 核心闪电（最亮）
+            renderer.addParticle({
+                x: baseX,
+                y: baseY,
+                size: 12 + Math.random() * 8,
+                color: goldCore,
+                velocity: { x: 0, y: 0 },
+                lifetime: 0.2,
+                opacity: 1
+            });
+        }
+        
+        // 第三阶段：闪电分支（更精细）
+        for (let branch = 0; branch < 6; branch++) {
+            const branchStart = 0.1 + Math.random() * 0.6;
+            const bx = targetX + (Math.random() - 0.5) * 50;
+            const by = skyY + (targetY - skyY) * branchStart;
+            const branchAngle = (Math.random() - 0.5) * Math.PI * 0.6;
+            const branchLength = 50 + Math.random() * 80;
+            
+            for (let i = 0; i < 12; i++) {
+                const t = i / 12;
+                const px = bx + Math.cos(branchAngle) * branchLength * t + (Math.random() - 0.5) * 25;
+                const py = by + Math.abs(Math.sin(branchAngle)) * branchLength * t + (Math.random() - 0.5) * 15;
+                
+                // 分支光晕
+                renderer.addParticle({
                     x: px,
                     y: py,
-                    size: 8,
-                    color: color,
+                    size: 15 + Math.random() * 8,
+                    color: goldOuter,
                     velocity: { x: 0, y: 0 },
-                    lifetime: 0.3,
-                    opacity: 1
+                    lifetime: 0.28,
+                    opacity: 0.5
+                });
+                
+                // 分支核心
+                renderer.addParticle({
+                    x: px,
+                    y: py,
+                    size: 8 + Math.random() * 5,
+                    color: goldInner,
+                    velocity: { x: 0, y: 0 },
+                    lifetime: 0.22,
+                    opacity: 0.8
                 });
             }
+        }
+        
+        // 第四阶段：击中点爆炸效果（增强）
+        // 爆炸核心
+        for (let i = 0; i < 40; i++) {
+            const angle = (i / 40) * Math.PI * 2;
+            const speed = 5 + Math.random() * 12;
+            
+            renderer.addParticle({
+                x: targetX,
+                y: targetY,
+                size: 10 + Math.random() * 10,
+                color: goldCore,
+                velocity: {
+                    x: Math.cos(angle) * speed,
+                    y: Math.sin(angle) * speed
+                },
+                lifetime: 0.6,
+                opacity: 1
+            });
+        }
+        
+        // 爆炸外层
+        for (let i = 0; i < 25; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3 + Math.random() * 8;
+            
+            renderer.addParticle({
+                x: targetX,
+                y: targetY,
+                size: 15 + Math.random() * 12,
+                color: goldInner,
+                velocity: {
+                    x: Math.cos(angle) * speed,
+                    y: Math.sin(angle) * speed
+                },
+                lifetime: 0.5,
+                opacity: 0.8
+            });
+        }
+        
+        // 火花粒子
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 8 + Math.random() * 15;
+            
+            renderer.addParticle({
+                x: targetX,
+                y: targetY,
+                size: 4 + Math.random() * 4,
+                color: goldMiddle,
+                velocity: {
+                    x: Math.cos(angle) * speed,
+                    y: Math.sin(angle) * speed - 3
+                },
+                lifetime: 0.8,
+                opacity: 0.9
+            });
+        }
+        
+        // 第五阶段：击中点光环（多层）
+        for (let i = 0; i < 5; i++) {
+            renderer.addParticle({
+                x: targetX,
+                y: targetY,
+                size: 60 + i * 30,
+                color: i < 2 ? goldInner : goldOuter,
+                velocity: { x: 0, y: 0 },
+                lifetime: 0.5 + i * 0.1,
+                opacity: 0.8 - i * 0.12
+            });
+        }
+        
+        // 地面冲击波
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                for (let j = 0; j < 30; j++) {
+                    const angle = (j / 30) * Math.PI * 2;
+                    const dist = 30 + i * 40;
+                    renderer.addParticle({
+                        x: targetX + Math.cos(angle) * dist,
+                        y: targetY + Math.sin(angle) * dist * 0.3,
+                        size: 6 + Math.random() * 4,
+                        color: goldMiddle,
+                        velocity: {
+                            x: Math.cos(angle) * (3 + i * 2),
+                            y: Math.sin(angle) * (1 + i)
+                        },
+                        lifetime: 0.4,
+                        opacity: 0.7
+                    });
+                }
+            }, i * 50);
+        }
+        
+        // 对目标造成伤害
+        this.gameManager.gameObjects.forEach(obj => {
+            if ((obj.type === 'enemy' || obj.type === 'boss' || obj.type === 'ai_snake')) {
+                const dist = Math.sqrt((obj.x - targetX) ** 2 + (obj.y - targetY) ** 2);
+                if (dist < 40 && obj.takeDamage) {
+                    obj.takeDamage(damage);
+                }
+            }
+        });
+        
+        // 屏幕闪烁效果（金黄色）
+        if (this.gameManager.canvas) {
+            const ctx = this.gameManager.canvas.getContext('2d');
+            if (ctx) {
+                ctx.save();
+                ctx.globalAlpha = 0.35;
+                ctx.fillStyle = goldInner;
+                ctx.fillRect(0, 0, this.gameManager.canvas.width, this.gameManager.canvas.height);
+                ctx.restore();
+            }
+        }
+    }
+    
+    createSkyLightningEffect(x) {
+        if (!this.gameManager.systems.renderer) return;
+        
+        const renderer = this.gameManager.systems.renderer;
+        
+        // 金黄色调配色
+        const goldInner = '#ffd700';
+        const goldMiddle = '#ffb300';
+        const goldOuter = '#ff8c00';
+        
+        // 没有敌人时，在玩家附近显示天空闪电
+        const skyY = -50;
+        const groundY = 400;
+        
+        // 天空能量聚集
+        for (let i = 0; i < 10; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 20 + Math.random() * 40;
+            renderer.addParticle({
+                x: x + Math.cos(angle) * dist,
+                y: skyY + Math.sin(angle) * dist * 0.3,
+                size: 6 + Math.random() * 4,
+                color: goldInner,
+                velocity: {
+                    x: -Math.cos(angle) * 2,
+                    y: 3 + Math.random() * 2
+                },
+                lifetime: 0.35,
+                opacity: 0.8
+            });
+        }
+        
+        // 主闪电束
+        for (let i = 0; i < 20; i++) {
+            const t = i / 20;
+            const px = x + (Math.random() - 0.5) * 40;
+            const py = skyY + (groundY - skyY) * t + (Math.random() - 0.5) * 20;
+            
+            renderer.addParticle({
+                x: px,
+                y: py,
+                size: 20 + Math.random() * 12,
+                color: goldOuter,
+                velocity: { x: 0, y: 0 },
+                lifetime: 0.25,
+                opacity: 0.6
+            });
+            
+            renderer.addParticle({
+                x: px,
+                y: py,
+                size: 12 + Math.random() * 8,
+                color: goldMiddle,
+                velocity: { x: 0, y: 0 },
+                lifetime: 0.2,
+                opacity: 0.8
+            });
         }
     }
     

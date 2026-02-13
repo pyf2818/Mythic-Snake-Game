@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git init)",
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: initial commit - Mythic Snake roguelike game\n\nComplete implementation of HTML5 Canvas snake game with:\n- Wave-based enemy spawning system\n- Boss battles \\(5 types: Hydra, Demon, Titan, Thor, Chaos Lord\\)\n- Equipment system \\(weapons, accessories, collectibles\\)\n- Organ evolution mechanic\n- Weather/disaster systems with particle effects\n- Day/night cycles and seasons\n- localStorage save system \\(3 slots\\)\n- Full UI with inventory, leaderboard, achievements\n\nTechnical details:\n- Vanilla JavaScript ES6+ with class-based architecture\n- System-based game architecture pattern\n- RequestAnimationFrame game loop\n- Canvas rendering with particle effects\n- No external dependencies\n\nDocs: README.md, CLAUDE.md for development guide\nEOF\n\\)\")"
     ]
   }
 }
