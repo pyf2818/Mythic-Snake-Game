@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+npm-debug.log
+
+# Build outputs
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+temp/
+tmp/
+
+# Claude Code
+.claude/
+.claude-settings.local.json
+
+# Git (optional - keep if you want to exclude git history)
+# .git/
+
+# Vercel
+.vercel/
+
+# Other
+.cache/
+coverage/

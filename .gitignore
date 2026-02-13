@@ -30,3 +30,5 @@ build/
 # Test artifacts
 test-results/
 coverage/
+
+.vercel
