@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .test-pass {
+            color: green;
+            font-weight: bold;
+        }
+        .test-fail {
+            color: red;
+            font-weight: bold;
+        }
+        .console-output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #333;
+            color: white;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>游戏测试运行器</h1>
+        
+        <div style="text-align: center;">
+            <button class="test-button" onclick="runAllTests()">运行所有测试</button>
+            <button class="test-button" onclick="runWaveTests()">运行波次系统测试</button>
+            <button class="test-button" onclick="runEnemyTests()">运行敌人AI测试</button>
+            <button class="test-button" onclick="runCombatTests()">运行战斗系统测试</button>
+            <button class="test-button" onclick="runIntegrationTests()">运行集成测试</button>
+            <button class="test-button" onclick="clearConsole()">清空控制台</button>
+        </div>
+        
+        <div class="test-results" id="test-results">
+            <h2>测试结果</h2>
+            <p>点击上面的按钮运行测试</p>
+        </div>
+        
+        <div class="console-output" id="console-output">
+            控制台输出将显示在这里...
+        </div>
+    </div>
+    
+    <!-- 游戏测试脚本 -->
+    <script src="js/test/GameTests.js"></script>
+    
+    <script>
+        // 重定向console.log到页面
+        const consoleOutput = document.getElementById('console-output');
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return arg;
+            }).join(' ');
+            consoleOutput.innerHTML += message + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return arg;
+            }).join(' ');
+            consoleOutput.innerHTML += '<span style="color: red;">' + message + '</span>\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+        }
+        
+        function updateTestResults(results) {
+            const resultsDiv = document.getElementById('test-results');
+            let html = '<h2>测试结果</h2>';
+            
+            let passedCount = 0;
+            let failedCount = 0;
+            
+            results.forEach(result => {
+                if (result.passed) {
+                    passedCount++;
+                    html += '<p class="test-pass">✓ ' + result.name + '</p>';
+                } else {
+                    failedCount++;
+                    html += '<p class="test-fail">✗ ' + result.name + ': ' + result.error + '</p>';
+                }
+            });
+            
+            html += '<h3>总结</h3>';
+            html += '<p>测试完成: ' + passedCount + ' 通过, ' + failedCount + ' 失败</p>';
+            html += '<p>成功率: ' + ((passedCount / results.length) * 100).toFixed(1) + '%</p>';
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function runAllTests() {
+            console.log('开始运行所有测试...');
+            const tests = new GameTests();
+            tests.testWaveSpawning();
+            tests.testEnemyAI();
+            tests.testCombatSystem();
+            tests.testIntegration();
+            
+            tests.runTests().then(results => {
+                updateTestResults(results);
+                console.log('所有测试运行完成');
+            });
+        }
+        
+        function runWaveTests() {
+            console.log('开始运行波次系统测试...');
+            const tests = new GameTests();
+            tests.testWaveSpawning();
+            
+            tests.runTests().then(results => {
+                updateTestResults(results);
+                console.log('波次系统测试运行完成');
+            });
+        }
+        
+        function runEnemyTests() {
+            console.log('开始运行敌人AI测试...');
+            const tests = new GameTests();
+            tests.testEnemyAI();
+            
+            tests.runTests().then(results => {
+                updateTestResults(results);
+                console.log('敌人AI测试运行完成');
+            });
+        }
+        
+        function runCombatTests() {
+            console.log('开始运行战斗系统测试...');
+            const tests = new GameTests();
+            tests.testCombatSystem();
+            
+            tests.runTests().then(results => {
+                updateTestResults(results);
+                console.log('战斗系统测试运行完成');
+            });
+        }
+        
+        function runIntegrationTests() {
+            console.log('开始运行集成测试...');
+            const tests = new GameTests();
+            tests.testIntegration();
+            
+            tests.runTests().then(results => {
+                updateTestResults(results);
+                console.log('集成测试运行完成');
+            });
+        }
+        
+        // 页面加载时自动运行所有测试
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('游戏测试运行器已加载');
+            console.log('点击上方按钮运行测试');
+        });
+    </script>
+</body>
+</html>

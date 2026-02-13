@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mythic Snake</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- 动态背景光斑 -->
+        <div class="floating-orb floating-orb-1"></div>
+        <div class="floating-orb floating-orb-2"></div>
+        <div class="floating-orb floating-orb-3"></div>
+        
+        <!-- 主菜单界面 -->
+        <div id="main-menu" class="menu-screen">
+            <div id="game-title">Mythic Snake</div>
+            <div class="menu-buttons">
+                <button id="start-btn">开始游戏</button>
+                <button id="inventory-btn">仓库</button>
+                <button id="continue-btn">加入游戏</button>
+                <button id="guide-btn">玩法说明</button>
+                <button id="leaderboard-menu-btn">排行榜</button>
+                <button id="achievements-btn">成就系统</button>
+                <button id="shop-btn">金币商城</button>
+            </div>
+        </div>
+        
+        <!-- 左侧边栏 - 器官系统（技能树） -->
+        <div id="organ-system" class="sidebar left-sidebar">
+            <div class="sidebar-header">
+                <h3>器官系统</h3>
+            </div>
+            <div class="sidebar-content">
+                <div id="organ-tree-container">
+                    <!-- 器官技能树将通过JavaScript动态生成 -->
+                </div>
+                <div class="organ-resources">
+                    <div class="resource-item">
+                        <span class="resource-label">进化点:</span>
+                        <span id="evolution-points">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧边栏 - 事件日志 -->
+        <div id="event-log" class="sidebar right-sidebar">
+            <div class="sidebar-header">
+                <h3>事件日志</h3>
+            </div>
+            <div class="sidebar-content">
+                <div id="event-log-container">
+                    <!-- 事件日志将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 游戏画布 -->
+        <div id="game-canvas"></div>
+        
+        <!-- 波次信息显示 -->
+        <div id="wave-info" class="wave-info hidden">
+            <div class="wave-icon">🌊</div>
+            <div class="wave-content">
+                <div class="wave-label">当前波次</div>
+                <div class="wave-number" id="wave-number">0</div>
+            </div>
+            <div class="wave-timer" id="wave-timer">下一波: 25s</div>
+        </div>
+        
+        <!-- BOSS信息显示 -->
+        <div id="boss-info" class="boss-info hidden">
+            <div class="boss-name" id="boss-name">九头蛇</div>
+            <div class="boss-health-container">
+                <div class="boss-health-bar" id="boss-health-bar">
+                    <div class="boss-health-fill" id="boss-health-fill"></div>
+                </div>
+                <div class="boss-health-text" id="boss-health-text">100%</div>
+            </div>
+            <div class="boss-phase" id="boss-phase">阶段 1</div>
+        </div>
+        
+        <!-- 游戏UI -->
+        <div id="game-ui" class="hidden">
+            <!-- 左上角 - 玩家属性面板 -->
+            <div id="player-stats-panel" class="ui-panel left-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📊</span>
+                    <span class="panel-title">玩家属性</span>
+                </div>
+                <div class="panel-content">
+                    <!-- 生命值 -->
+                    <div class="stat-row">
+                        <div class="stat-icon health-icon">❤️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">生命值</span>
+                            <div class="stat-bar-container">
+                                <div class="stat-bar health-bar" id="health-bar">
+                                    <div class="stat-bar-fill health-fill" id="health-fill"></div>
+                                </div>
+                                <span class="stat-value" id="health-text">100</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 能量值 -->
+                    <div class="stat-row">
+                        <div class="stat-icon energy-icon">⚡</div>
+                        <div class="stat-info">
+                            <span class="stat-label">能量值</span>
+                            <div class="stat-bar-container">
+                                <div class="stat-bar energy-bar" id="energy-bar">
+                                    <div class="stat-bar-fill" id="energy-fill"></div>
+                                </div>
+                                <span class="stat-value" id="energy-text">100%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 攻击力 -->
+                    <div class="stat-row compact">
+                        <div class="stat-icon attack-icon">⚔️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">攻击力</span>
+                            <span class="stat-value" id="attack-value">10</span>
+                        </div>
+                    </div>
+                    <!-- 防御力 -->
+                    <div class="stat-row compact">
+                        <div class="stat-icon defense-icon">🛡️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">防御力</span>
+                            <span class="stat-value" id="defense-value">5</span>
+                        </div>
+                    </div>
+                    <!-- 回溯值 -->
+                    <div class="stat-row compact">
+                        <div class="stat-icon backtrack-icon">⏪</div>
+                        <div class="stat-info">
+                            <span class="stat-label">回溯次数</span>
+                            <span class="stat-value" id="backtrack-value">3</span>
+                        </div>
+                    </div>
+                    <!-- 速度 -->
+                    <div class="stat-row compact">
+                        <div class="stat-icon speed-icon">💨</div>
+                        <div class="stat-info">
+                            <span class="stat-label">速度</span>
+                            <span class="stat-value" id="speed-value">5</span>
+                            <span class="boost-indicator hidden" id="boost-indicator">🔥加速</span>
+                        </div>
+                    </div>
+                    <!-- 闪现技能 -->
+                    <div class="stat-row compact">
+                        <div class="stat-icon flash-icon">⚡</div>
+                        <div class="stat-info">
+                            <span class="stat-label">闪现</span>
+                            <div class="skill-cooldown-container">
+                                <div class="skill-cooldown-bar" id="flash-cooldown-bar">
+                                    <div class="skill-cooldown-fill" id="flash-cooldown-fill"></div>
+                                </div>
+                                <span class="skill-cooldown-text" id="flash-cooldown-text">就绪</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右上角 - 四季时间面板 -->
+            <div id="season-time-panel" class="ui-panel right-panel">
+                <div class="panel-header">
+                    <span class="panel-icon" id="season-icon">🌸</span>
+                    <span class="panel-title" id="season-text">春季</span>
+                    <button id="menu-btn" class="panel-menu-btn">☰</button>
+                </div>
+                <div class="panel-content">
+                    <!-- 时间显示 -->
+                    <div class="time-display">
+                        <div class="time-icon">🕐</div>
+                        <div class="time-info">
+                            <span class="time-label">游戏时间</span>
+                            <span class="time-value" id="time-text">00:00</span>
+                        </div>
+                    </div>
+                    <!-- 季节进度 -->
+                    <div class="season-progress">
+                        <div class="season-progress-bar">
+                            <div class="season-progress-fill" id="season-progress-fill"></div>
+                        </div>
+                        <span class="season-progress-text" id="season-progress-text">第 1 天</span>
+                    </div>
+                    <!-- 天气信息 -->
+                    <div class="weather-info">
+                        <span class="weather-icon" id="weather-icon">☀️</span>
+                        <span class="weather-text" id="weather-text">晴朗</span>
+                    </div>
+                </div>
+                <!-- 季节装饰 -->
+                <div class="season-decoration" id="season-decoration"></div>
+            </div>
+            
+            <!-- 调试面板 -->
+            <div id="debug-panel" class="debug-panel hidden">
+                <div class="debug-header">
+                    <span>🔧 调试工具</span>
+                    <button id="close-debug-btn" class="debug-close-btn">×</button>
+                </div>
+                <div class="debug-content">
+                    <div class="debug-section">
+                        <h4>输入状态</h4>
+                        <div class="debug-row">
+                            <span>Shift键:</span>
+                            <span id="debug-shift-status">未按下</span>
+                        </div>
+                        <div class="debug-row">
+                            <span>按住状态:</span>
+                            <span id="debug-holding-status">否</span>
+                        </div>
+                        <div class="debug-row">
+                            <span>点击计数:</span>
+                            <span id="debug-double-tap-count">0</span>
+                        </div>
+                        <div class="debug-row">
+                            <span>上次点击:</span>
+                            <span id="debug-last-press-time">0ms</span>
+                        </div>
+                    </div>
+                    <div class="debug-section">
+                        <h4>能量系统</h4>
+                        <div class="debug-row">
+                            <span>当前能量:</span>
+                            <span id="debug-energy">100</span>
+                        </div>
+                        <div class="debug-row">
+                            <span>闪现消耗:</span>
+                            <span id="debug-flash-cost">15</span>
+                        </div>
+                        <div class="debug-row">
+                            <span>恢复速率:</span>
+                            <span id="debug-recovery-rate">2/秒</span>
+                        </div>
+                    </div>
+                    <div class="debug-section">
+                        <h4>技能状态</h4>
+                        <div class="debug-row">
+                            <span>闪现就绪:</span>
+                            <span id="debug-flash-ready">是</span>
+                        </div>
+                        <div class="debug-row">
+                            <span>冷却剩余:</span>
+                            <span id="debug-flash-cooldown">0s</span>
+                        </div>
+                        <div class="debug-row">
+                            <span>加速状态:</span>
+                            <span id="debug-boost-status">否</span>
+                        </div>
+                        <div class="debug-row">
+                            <span>当前速度:</span>
+                            <span id="debug-current-speed">5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 玩法说明界面 -->
+        <div id="guide-menu" class="menu-screen hidden">
+            <div class="guide-container">
+                <div class="guide-header">
+                    <button class="back-btn" id="guide-back-btn">返回</button>
+                    <h2>📖 玩法说明</h2>
+                    <div class="guide-search">
+                        <input type="text" id="guide-search-input" placeholder="搜索内容...">
+                        <span class="search-icon">🔍</span>
+                    </div>
+                </div>
+                <div class="guide-content">
+                    <div class="guide-sidebar">
+                        <div class="guide-nav">
+                            <button class="guide-nav-btn active" data-section="basics">🎮 基础操作</button>
+                            <button class="guide-nav-btn" data-section="energy">⚡ 能量系统</button>
+                            <button class="guide-nav-btn" data-section="boss">🐉 Boss系统</button>
+                            <button class="guide-nav-btn" data-section="equipment">⚔️ 装备系统</button>
+                            <button class="guide-nav-btn" data-section="skills">✨ 技能系统</button>
+                            <button class="guide-nav-btn" data-section="organs">🧬 器官进化</button>
+                            <button class="guide-nav-btn" data-section="enemies">👾 敌人与战斗</button>
+                            <button class="guide-nav-btn" data-section="weather">🌤️ 天气系统</button>
+                            <button class="guide-nav-btn" data-section="items">🎁 道具与食物</button>
+                            <button class="guide-nav-btn" data-section="tips">💡 游戏技巧</button>
+                            <button class="guide-nav-btn" data-section="faq">❓ 常见问题</button>
+                        </div>
+                    </div>
+                    <div class="guide-main">
+                        <div id="guide-section-basics" class="guide-section active">
+                            <h3>🎮 基础操作</h3>
+                            <div class="guide-card">
+                                <h4>移动控制</h4>
+                                <div class="key-hint">
+                                    <span class="key">↑</span><span class="key">↓</span><span class="key">←</span><span class="key">→</span>
+                                    <span class="key-desc">方向键控制蛇的移动方向</span>
+                                </div>
+                                <p>使用键盘方向键控制蛇的移动方向。蛇会持续向前移动，你只能改变方向，不能停止。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>加速移动</h4>
+                                <div class="key-hint">
+                                    <span class="key">Shift</span>
+                                    <span class="key-desc">长按加速移动（消耗能量）</span>
+                                </div>
+                                <p>长按Shift键可以让蛇加速移动，但会消耗更多能量。适合快速逃离危险或追击目标。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>闪现技能</h4>
+                                <div class="key-hint">
+                                    <span class="key">Shift</span><span class="key">Shift</span>
+                                    <span class="key-desc">快速双击闪现（消耗15能量）</span>
+                                </div>
+                                <p>在0.4秒内快速双击Shift键，可以向前闪现一段距离。闪现距离与身体长度相关，冷却时间4秒。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>时间回溯</h4>
+                                <div class="key-hint">
+                                    <span class="key">Z</span>
+                                    <span class="key-desc">回溯到之前的位置</span>
+                                </div>
+                                <p>按Z键可以回溯到几秒前的位置，用于逃离危险。回溯次数有限，需要合理使用。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>暂停游戏</h4>
+                                <div class="key-hint">
+                                    <span class="key">ESC</span><span class="key">Space</span>
+                                    <span class="key-desc">暂停/继续游戏</span>
+                                </div>
+                                <p>按ESC或空格键可以暂停游戏，再次按下继续。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>快速存档</h4>
+                                <div class="key-hint">
+                                    <span class="key">F5</span>
+                                    <span class="key-desc">快速保存游戏</span>
+                                </div>
+                                <p>按F5键可以快速保存当前游戏进度到当前存档槽位。游戏进行中随时可用。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>快速读档</h4>
+                                <div class="key-hint">
+                                    <span class="key">F9</span>
+                                    <span class="key-desc">快速加载最近存档</span>
+                                </div>
+                                <p>按F9键可以快速加载最近的存档。方便在失败后快速重新开始。</p>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-energy" class="guide-section">
+                            <h3>⚡ 能量系统</h3>
+                            <div class="guide-card">
+                                <h4>能量是什么？</h4>
+                                <p>能量是蛇进行各种活动的基础资源。移动、加速、使用技能都需要消耗能量。能量耗尽时，蛇只能以基础速度移动，无法使用技能。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>能量消耗</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">普通移动</span>：0.3点/秒</li>
+                                    <li><span class="highlight">快速移动</span>：1.5点/秒</li>
+                                    <li><span class="highlight">加速状态</span>：3点/秒</li>
+                                    <li><span class="highlight">闪现技能</span>：15点/次</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>能量恢复</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">被动恢复</span>：2点/秒（持续）</li>
+                                    <li><span class="highlight">移动中</span>：额外+1点/秒</li>
+                                    <li><span class="highlight">静止状态</span>：额外+5点/秒</li>
+                                    <li><span class="highlight">普通食物</span>：+15点</li>
+                                    <li><span class="highlight">特殊食物</span>：+35点</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card warning">
+                                <h4>⚠️ 能量警告</h4>
+                                <p>当能量低于15%时，能量条会变为红色并闪烁警告。请及时补充能量或停止消耗性操作！</p>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-boss" class="guide-section">
+                            <h3>🐉 Boss系统</h3>
+                            <div class="guide-card">
+                                <h4>Boss出现规则</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">每3波</span>出现一个Boss</li>
+                                    <li>Boss出现前有<span class="highlight">5秒警告</span>时间</li>
+                                    <li>击败Boss后获得<span class="highlight">稀有掉落物</span></li>
+                                    <li>Boss难度随波次递增</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Boss类型</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">🐍 九头蛇</span>：多头攻击，生命回复 | 难度：★★★</li>
+                                    <li><span class="highlight">🔥 炎魔</span>：火焰攻击，范围伤害 | 难度：★★★★</li>
+                                    <li><span class="highlight">🛡️ 泰坦</span>：高防御，重击 | 难度：★★★★</li>
+                                    <li><span class="highlight">⚡ 雷神</span>：闪电链，高机动 | 难度：★★★★★</li>
+                                    <li><span class="highlight">👑 混沌之王</span>：混乱攻击，多阶段 | 难度：★★★★★★</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>战斗技巧</h4>
+                                <ul class="guide-list">
+                                    <li>观察Boss的攻击模式，每个Boss有固定节奏</li>
+                                    <li>利用闪现技能躲避关键攻击</li>
+                                    <li>保持距离，远程攻击更安全</li>
+                                    <li>注意Boss血量降低后会进入狂暴状态</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Boss掉落</h4>
+                                <p>击败Boss后会掉落装备物品，靠近即可自动拾取：</p>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">🏆 纪念品</span>：收藏品，展示成就</li>
+                                    <li><span class="highlight">💍 饰品</span>：提供属性加成，可装备2个</li>
+                                    <li><span class="highlight">⚔️ 武器</span>：特殊攻击模式，可装备1个</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-equipment" class="guide-section">
+                            <h3>⚔️ 装备系统</h3>
+                            <div class="guide-card">
+                                <h4>稀有度等级</h4>
+                                <ul class="guide-list">
+                                    <li><span style="color:#9e9e9e">● 普通</span>：属性倍率 1.0x</li>
+                                    <li><span style="color:#2196f3">● 稀有</span>：属性倍率 1.3x</li>
+                                    <li><span style="color:#9c27b0">● 史诗</span>：属性倍率 1.6x</li>
+                                    <li><span style="color:#ff9800">● 传说</span>：属性倍率 2.0x</li>
+                                    <li><span style="color:#e91e63">● 神话</span>：属性倍率 2.5x</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>属性类型</h4>
+                                <p><strong>基础属性：</strong></p>
+                                <ul class="guide-list">
+                                    <li>❤️ 最大生命值 | 💚 生命回复 | 👟 移动速度</li>
+                                    <li>🛡️ 防御力 | ⚡ 最大能量 | 🔋 能量恢复</li>
+                                </ul>
+                                <p><strong>攻击属性：</strong></p>
+                                <ul class="guide-list">
+                                    <li>⚔️ 攻击力 | 💥 暴击率 | 💫 暴击伤害</li>
+                                    <li>🔥 射速 | 💨 子弹速度 | ⭕ 子弹大小</li>
+                                </ul>
+                                <p><strong>特殊属性：</strong></p>
+                                <ul class="guide-list">
+                                    <li>🌀 闪避率 | 🩸 吸血 | ⏱️ 闪现冷却</li>
+                                    <li>✨ 闪现距离 | 🧲 拾取范围 | 📚 经验加成</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>武器类型</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">🐉 散射</span>：发射多发子弹形成扇形攻击</li>
+                                    <li><span class="highlight">💣 爆炸</span>：发射爆炸弹丸造成范围伤害</li>
+                                    <li><span class="highlight">🗡️ 穿透</span>：发射可穿透多个敌人的子弹</li>
+                                    <li><span class="highlight">🚀 追踪</span>：发射自动追踪敌人的导弹</li>
+                                    <li><span class="highlight">⚡ 闪电</span>：召唤闪电链式攻击多个敌人</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Buff效果</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">🔥 灼烧</span>：攻击时点燃敌人</li>
+                                    <li><span class="highlight">❄️ 冰冻</span>：攻击时减速敌人</li>
+                                    <li><span class="highlight">🩸 嗜血</span>：击杀时恢复生命</li>
+                                    <li><span class="highlight">🌵 荆棘</span>：受伤时反弹伤害</li>
+                                    <li><span class="highlight">🛡️ 守护</span>：受伤时获得护盾</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>仓库操作</h4>
+                                <p><strong>按键 I</strong> 打开/关闭仓库</p>
+                                <ul class="guide-list">
+                                    <li>点击物品查看详情</li>
+                                    <li>点击"装备"按钮穿戴装备</li>
+                                    <li>点击已装备槽位可卸下装备</li>
+                                    <li>装备效果在下一局游戏生效</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-skills" class="guide-section">
+                            <h3>✨ 技能系统</h3>
+                            <div class="guide-card">
+                                <h4>闪现技能</h4>
+                                <p><strong>触发方式：</strong>快速双击Shift键（间隔≤0.4秒）</p>
+                                <p><strong>消耗：</strong>15点能量</p>
+                                <p><strong>冷却：</strong>4秒</p>
+                                <p><strong>距离：</strong>角色高度 × 2 × 身体长度系数</p>
+                                <p class="tip">💡 提示：闪现可以穿过障碍物，但会被边界阻挡。在紧急情况下是绝佳的逃生手段！</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>时间回溯</h4>
+                                <p><strong>触发方式：</strong>按Z键</p>
+                                <p><strong>效果：</strong>回到几秒前的位置和状态</p>
+                                <p><strong>限制：</strong>次数有限，需要收集特定道具补充</p>
+                                <p class="tip">💡 提示：在即将被敌人包围或撞墙时使用，可以化险为夷！</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>加速冲刺</h4>
+                                <p><strong>触发方式：</strong>长按Shift键</p>
+                                <p><strong>效果：</strong>速度从5提升至15</p>
+                                <p><strong>消耗：</strong>3点能量/秒</p>
+                                <p class="tip">💡 提示：适合快速追击食物或逃离危险区域，但要注意能量消耗！</p>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-organs" class="guide-section">
+                            <h3>🧬 器官进化</h3>
+                            <div class="guide-card">
+                                <h4>进化点获取</h4>
+                                <p>每次吃到食物都会获得进化点。进化点可以用来解锁和升级各种器官能力。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>器官类型</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">🫀 心脏</span>：提升移动速度和加速效果</li>
+                                    <li><span class="highlight">🫁 肺部</span>：增加能量上限和恢复速度</li>
+                                    <li><span class="highlight">🧠 大脑</span>：增强技能效果和减少冷却</li>
+                                    <li><span class="highlight">👁️ 眼睛</span>：扩大视野范围</li>
+                                    <li><span class="highlight">🦷 牙齿</span>：增加攻击力和食物效果</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>进化策略</h4>
+                                <p class="tip">💡 建议优先升级肺部（增加能量）和心脏（提升速度），这样更容易生存和收集资源。</p>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-enemies" class="guide-section">
+                            <h3>👾 敌人与战斗</h3>
+                            <div class="guide-card">
+                                <h4>敌对蛇</h4>
+                                <p>游戏中会生成AI控制的敌对蛇，它们会主动追击玩家。敌对蛇的数量和强度会随时间增加。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>敌人特性</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">普通敌人</span>：基础速度，单独行动</li>
+                                    <li><span class="highlight">精英敌人</span>：更快更强，需要小心应对</li>
+                                    <li><span class="highlight">协同攻击</span>：多个敌人会协同包围玩家</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>应对策略</h4>
+                                <ul class="guide-list">
+                                    <li>保持移动，不要停留在原地</li>
+                                    <li>利用闪现技能快速脱离包围</li>
+                                    <li>时间回溯是最后的保命手段</li>
+                                    <li>收集道具增强自身实力</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-weather" class="guide-section">
+                            <h3>🌤️ 天气系统</h3>
+                            <div class="guide-card">
+                                <h4>天气类型</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">☀️ 晴天</span>：正常游戏环境</li>
+                                    <li><span class="highlight">🌧️ 雨天</span>：视野略微降低，食物生成加快</li>
+                                    <li><span class="highlight">❄️ 雪天</span>：移动速度降低，需要更多能量</li>
+                                    <li><span class="highlight">🌪️ 风暴</span>：随机位移效果，需要稳定控制</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>季节变化</h4>
+                                <p>游戏会经历春夏秋冬四季变化，每个季节有不同的天气概率和特殊效果。</p>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-items" class="guide-section">
+                            <h3>🎁 道具与食物</h3>
+                            <div class="guide-card">
+                                <h4>食物类型</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">🍎 普通食物</span>：+15能量，+进化点，+金币</li>
+                                    <li><span class="highlight">⭐ 特殊食物</span>：+35能量，更多奖励</li>
+                                    <li><span class="highlight">💎 稀有食物</span>：特殊效果，如无敌、加速等</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>特殊道具</h4>
+                                <ul class="guide-list">
+                                    <li><span class="highlight">🌀 虫洞</span>：传送到随机位置</li>
+                                    <li><span class="highlight">🛡️ 护盾</span>：短暂无敌效果</li>
+                                    <li><span class="highlight">⚡ 能量球</span>：大量恢复能量</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-tips" class="guide-section">
+                            <h3>💡 游戏技巧</h3>
+                            <div class="guide-card">
+                                <h4>新手入门</h4>
+                                <ul class="guide-list">
+                                    <li>先熟悉基本移动，不要急于使用技能</li>
+                                    <li>保持能量在50%以上，留有应急空间</li>
+                                    <li>优先收集食物，不要主动攻击敌人</li>
+                                    <li>静止时能量恢复更快，可以适当休息</li>
+                                    <li>按 <strong>I</strong> 键打开仓库管理装备</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Boss战技巧</h4>
+                                <ul class="guide-list">
+                                    <li>Boss出现前有5秒警告，做好准备</li>
+                                    <li>观察Boss攻击模式，找准躲避时机</li>
+                                    <li>装备合适的武器和饰品再挑战Boss</li>
+                                    <li>保持距离，利用远程攻击消耗Boss</li>
+                                    <li>击败Boss后记得拾取掉落物</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>装备搭配</h4>
+                                <ul class="guide-list">
+                                    <li>武器选择：散射适合清小怪，爆炸适合打Boss</li>
+                                    <li>饰品搭配：攻击+防御平衡配置</li>
+                                    <li>Buff选择：灼烧/冰冻增强控制能力</li>
+                                    <li>稀有度越高，属性加成越强</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>进阶技巧</h4>
+                                <ul class="guide-list">
+                                    <li>合理规划移动路线，避免被包围</li>
+                                    <li>在敌人密集区域保留闪现技能</li>
+                                    <li>利用天气效果获得优势</li>
+                                    <li>优先升级关键器官提升生存能力</li>
+                                    <li>每3波记得选择合适的卡牌</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>高分策略</h4>
+                                <ul class="guide-list">
+                                    <li>保持连续吃食物获得连击加成</li>
+                                    <li>收集稀有道具获得额外分数</li>
+                                    <li>完成成就解锁额外奖励</li>
+                                    <li>挑战更高难度的Boss获取传说装备</li>
+                                    <li>利用经验加成装备提升升级速度</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div id="guide-section-faq" class="guide-section">
+                            <h3>❓ 常见问题</h3>
+                            <div class="guide-card">
+                                <h4>Q: Boss不出现怎么办？</h4>
+                                <p>A: Boss每3波出现一次，请耐心等待波次推进。每波间隔约25秒。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Q: 装备后武器没有效果？</h4>
+                                <p>A: 确保在仓库中正确装备武器，武器会替换默认攻击。装备效果在下一局游戏开始时生效。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Q: 如何获得更好的装备？</h4>
+                                <p>A: 击败更高难度的Boss，掉落稀有度更高的装备。Boss难度随波次递增。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Q: 为什么闪现技能无法使用？</h4>
+                                <p>A: 检查以下几点：</p>
+                                <ul class="guide-list">
+                                    <li>能量是否足够（需要15点）</li>
+                                    <li>技能是否在冷却中（4秒冷却）</li>
+                                    <li>双击间隔是否在0.4秒内</li>
+                                    <li>每次按住时间是否超过0.25秒</li>
+                                </ul>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Q: 能量耗尽会怎样？</h4>
+                                <p>A: 能量耗尽时，你只能以基础速度移动，无法使用加速和闪现技能。但不会死亡，可以通过被动恢复或吃食物来补充能量。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Q: 如何获得更多进化点？</h4>
+                                <p>A: 每次吃食物都会获得进化点。特殊食物和稀有食物提供更多进化点。保持连击可以获得额外加成。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Q: 敌人太多怎么办？</h4>
+                                <p>A: 使用闪现技能快速脱离，或者使用时间回溯回到安全位置。保持移动，不要被包围。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Q: 如何保存游戏进度？</h4>
+                                <p>A: 暂停游戏后点击"保存游戏"按钮。游戏会自动保存到本地存储。装备和仓库数据会自动保存。</p>
+                            </div>
+                            <div class="guide-card">
+                                <h4>Q: 卡牌选择有什么技巧？</h4>
+                                <p>A: 根据当前游戏风格选择，攻击型选伤害，生存型选防御。每3波可抽取一次卡牌。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 成就系统界面 -->
+        <div id="achievements-menu" class="menu-screen hidden">
+            <h2>成就系统</h2>
+            <div class="menu-header">
+                <button class="back-btn">返回</button>
+                <h3>我的成就</h3>
+            </div>
+            <div id="achievements-container">
+                <!-- 成就列表将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 金币商城界面 -->
+        <div id="shop-menu" class="menu-screen hidden">
+            <h2>金币商城</h2>
+            <div class="menu-header">
+                <button class="back-btn">返回</button>
+                <h3>购买道具</h3>
+            </div>
+            <div class="shop-categories">
+                <button class="category-btn active">皮肤</button>
+                <button class="category-btn">道具</button>
+                <button class="category-btn">天气</button>
+            </div>
+            <div id="shop-items">
+                <!-- 商品列表将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 游戏结束界面 -->
+        <div id="game-over" class="menu-screen hidden">
+            <h2>游戏结束</h2>
+            <button id="restart-btn">重新开始</button>
+            <button id="game-over-menu-btn">返回菜单</button>
+        </div>
+        
+        <!-- 暂停菜单界面 -->
+        <div id="pause-menu" class="menu-screen hidden">
+            <h2>暂停</h2>
+            <button id="resume-btn">继续</button>
+            <button id="save-btn">保存游戏</button>
+            <button id="load-btn">加载游戏</button>
+            <button id="quit-btn">退出游戏</button>
+        </div>
+        
+        <!-- 存档管理界面 -->
+        <div id="save-menu" class="menu-screen hidden">
+            <div class="save-container">
+                <div class="save-header">
+                    <h2>💾 存档管理</h2>
+                    <button class="back-btn" id="save-back-btn">返回</button>
+                </div>
+                <div class="save-content">
+                    <div class="save-tabs">
+                        <button class="save-tab active" data-tab="save">保存游戏</button>
+                        <button class="save-tab" data-tab="load">加载游戏</button>
+                    </div>
+                    <div class="save-slots" id="save-slots-container">
+                        <!-- 存档槽位将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                <div class="save-footer">
+                    <div class="save-info">
+                        <span id="save-storage-info">存储空间: --</span>
+                        <span id="save-auto-info">自动保存: 每60秒</span>
+                    </div>
+                    <div class="save-shortcuts">
+                        <span>快捷键: F5 快速存档 | F9 快速读档</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/core/TimeManager.js"></script>
+    <script src="js/environment/Terrain.js"></script>
+    <script src="js/environment/DayNight.js"></script>
+    <script src="js/environment/Season.js"></script>
+    <script src="js/environment/LiquidPhysics.js"></script>
+    <script src="js/environment/EnvironmentalZones.js"></script>
+    <script src="js/environment/EnvironmentalObjects.js"></script>
+    <script src="js/systems/OrganEvolution.js"></script>
+    <script src="js/systems/EnergySystem.js"></script>
+    <script src="js/systems/Wormhole.js"></script>
+    <script src="js/systems/WormholeVisuals.js"></script>
+    <script src="js/systems/SoundEngine.js"></script>
+    <script src="js/systems/AudioManager.js"></script>
+    <script src="js/systems/JetEffectManager.js"></script>
+    <script src="js/systems/NotificationManager.js"></script>
+    <script src="js/systems/SaveManager.js"></script>
+    <script src="js/systems/SeasonalFallingObjectsManager.js"></script>
+    <script src="js/systems/WeatherDisasterManager.js"></script>
+    <script src="js/systems/DisasterVisuals.js"></script>
+    <script src="js/systems/BulletSystem.js"></script>
+    <script src="js/systems/CardSystem.js"></script>
+    <script src="js/systems/DropItemSystem.js"></script>
+    <script src="js/entities/DroppedItem.js"></script>
+    <script src="js/systems/InventorySystem.js"></script>
+    <script src="js/systems/FireRateEnhancer.js"></script>
+    <script src="js/systems/GameUIManager.js"></script>
+    <script src="js/systems/UIAnimations.js"></script>
+    <script src="js/systems/UISystems.js"></script>
+    <script src="js/systems/LeaderboardManager.js"></script>
+    <script src="js/systems/ScoreCoinUI.js"></script>
+    <script src="js/ai/AIController.js"></script>
+    <script src="js/visuals/Renderer.js"></script>
+    <script src="js/entities/EnemySprites.js"></script>
+    <script src="js/entities/Boss.js"></script>
+    <script src="js/systems/test.js"></script>
+    <script src="js/systems/BossManager.js"></script>
+    <script src="js/systems/FlashSkill.js"></script>
+    <script src="js/core/Snake.js"></script>
+    <script src="js/core/GameManager.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
